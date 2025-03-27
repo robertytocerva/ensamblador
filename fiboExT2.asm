@@ -34,7 +34,7 @@ MAIN PROC
     ; Validar que esté entre 1 y 11
     CMP AL, 1
     JL inp     ; Cambiamos FIN por INVALIDO (más cercano)
-    CMP AL, 13
+    CMP AL, 54
     JG inp     ; Cambiamos FIN por INVALIDO (más cercano)
     
     ; Mostrar mensaje de la serie
@@ -173,5 +173,5 @@ IMPRIMIR_DIGITOS:
     POP AX
     RET
 PRINT_NUM ENDP
-
+;comentario para enseñarle a mi novia Nadia <3
 END MAIN
