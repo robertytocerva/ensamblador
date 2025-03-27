@@ -174,4 +174,5 @@ IMPRIMIR_DIGITOS:
     RET
 PRINT_NUM ENDP
 ;comentario para enseñarle a mi novia Nadia <3
+;otra linea de comentario para que no sufra pq borre el anterior
 END MAIN
