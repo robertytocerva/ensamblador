@@ -2,15 +2,15 @@
     .STACK 100h
 
     .DATA
-        msgIteraciones db 'Ingrese el numero de iteraciones (max 11): $'
-        msgError db 'Error! Debe ser un numero entre 1 y 11.$'
+        msgIteraciones db 'Ingrese el numero de iteraciones (max 12): $'
+        msgError db 'Error! Debe ser un numero entre 1 y 12.$'
         msgSerie db 'Serie de Fibonacci: $'
         msgSerieInv db 'Serie Invertida: $'
         msgSuma db 'Suma de la serie: $'
         msgPrimo db 'La suma es un numero primo.$'
         msgNoPrimo db 'La suma NO es un numero primo.$'
         msgReiniciar db 'Presione ESC para salir o cualquier tecla para continuar.$'
-        saltoLinea db 0Dh,0Ah,'$'
+        saltoLinea db 10,13,'$'
         iteraciones db ?
         suma dw ?
         pila dw 12 dup(?)
@@ -34,27 +34,27 @@
 
         call calcularFibonacci
         
-        ; Mostrar serie original
+        
         print msgSerie
         call mostrarPilaSinPerderAX
         print saltoLinea
         
-        ; Mostrar serie invertida
+        
         print msgSerieInv
         call mostrarPilaInvertidaSinPerderAX
         print saltoLinea
         
-        ; Calcular y mostrar suma
+        
         call calcularSuma
         print msgSuma
-        mov ax, suma  ; Asegurar que AX tenga el valor correcto
+        mov ax, suma  
         call imprimirNumero
         print saltoLinea
-        ; Verificar si es primo
+        
         call esPrimo
         print saltoLinea
         
-        ; Opción para reiniciar o salir
+        
         print msgReiniciar
         call esperarTecla
         cmp al, 1Bh
@@ -63,22 +63,81 @@
         mov ax, 4C00h
         int 21h
 
-    leerIteraciones proc
-        ; Leer número de iteraciones y validarlo
-        mov ah, 01h
-        int 21h
-        sub al, '0'
-        cmp al, 1
-        jl error
-        cmp al, 11
-        jg error
-        mov iteraciones, al
-        ret
-    error:
-        print saltoLinea
-        print msgError
-        jmp leerIteraciones
-    leerIteraciones endp
+leerIteraciones proc
+    push bx
+    push ax
+    push dx
+
+    xor ax, ax           
+    xor bx, bx           
+
+    
+    mov ah, 01h
+    int 21h
+    cmp al, 13           
+    je leerIteraciones
+    cmp al, '1'          
+    jl error
+    cmp al, '9'          
+    jg verificarDosCifras
+
+    sub al, '0'          
+    mov bl, al           
+
+    ; Leer segundo carácter
+    mov ah, 01h
+    int 21h
+    cmp al, 13           
+    je almacenar_numero
+    cmp al, '0'          
+    je esDiez
+    cmp al, '1'
+    je esOnce
+    cmp al, '2'
+    je esDoce
+    jmp error            
+
+verificarDosCifras:
+    cmp al, '1'          
+    jne error           
+
+    sub al, '0'          
+    mov bl, al           
+
+    
+    mov ah, 01h
+    int 21h
+    cmp al, '0'          
+    je esDiez
+    cmp al, '1'
+    je esOnce
+    cmp al, '2'
+    je esDoce
+    jmp error            
+
+esDiez:
+    mov bl, 10          
+    jmp almacenar_numero
+
+esOnce:
+    mov bl, 11 
+    jmp almacenar_numero
+    
+esDoce:
+    mov bl,12
+
+almacenar_numero:
+    mov iteraciones, bl  
+    pop dx
+    pop ax
+    pop bx
+    ret
+
+error:
+    print saltoLinea
+    print msgError
+    jmp leerIteraciones
+leerIteraciones endp
 
     calcularFibonacci proc
         push cx
@@ -126,7 +185,7 @@
     bucle_mostrar:
         mov ax, pila[si]
         call imprimirNumero
-        mov dl, ' '          ; Espacio entre números
+        mov dl, ' '          
         mov ah, 02h
         int 21h
         add si, 2
@@ -153,7 +212,7 @@
     bucle_inv:
         mov ax, pila[si]
         call imprimirNumero
-        mov dl, ' '          ; Espacio entre números
+        mov dl, ' '          
         mov ah, 02h
         int 21h
         sub si, 2
