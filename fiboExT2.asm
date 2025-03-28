@@ -1,19 +1,110 @@
     .MODEL small
     .STACK 100h
 
-    .DATA
-        msgIteraciones db 'Ingrese el numero de iteraciones (max 11): $'
-        msgError db 'Error! Debe ser un numero entre 1 y 11.$'
-        msgSerie db 'Serie de Fibonacci: $'
-        msgSerieInv db 'Serie Invertida: $'
-        msgSuma db 'Suma de la serie: $'
-        msgPrimo db 'La suma es un numero primo.$'
-        msgNoPrimo db 'La suma NO es un numero primo.$'
-        msgReiniciar db 'Presione ESC para salir o cualquier tecla para continuar.$'
-        saltoLinea db 0Dh,0Ah,'$'
-        iteraciones db ?
-        suma dw ?
-        pila dw 12 dup(?)
+.CODE
+MAIN PROC
+    MOV AX, @DATA
+    MOV DS, AX
+    
+    ; Mostrar mensaje para pedir iteraciones
+    MOV AH, 09H
+    LEA DX, msg1
+    INT 21H
+    
+    ; Leer entrada del usuario
+    MOV AH, 0AH
+    LEA DX, buffer
+    INT 21H
+    
+    ; Convertir entrada a número
+    MOV SI, OFFSET buffer + 2
+    CALL ASCII_TO_NUM
+    MOV iterations, AL
+    
+    ; Validar que esté entre 1 y 11
+    CMP AL, 1
+    JL inp     ; Cambiamos FIN por INVALIDO (más cercano)
+    CMP AL, 54
+    JG inp     ; Cambiamos FIN por INVALIDO (más cercano)
+    
+    ; Mostrar mensaje de la serie
+    MOV AH, 09H
+    LEA DX, msg2
+    INT 21H
+    
+    ; Inicializar variables para Fibonacci
+    MOV CX, 0
+    MOV CL, iterations
+    MOV num1, 0
+    MOV num2, 1
+    
+    ; Mostrar los primeros dos números si es necesario
+    CMP CL, 1
+    JE MOSTRAR_PRIMERO
+    CMP CL, 2
+    JE MOSTRAR_PRIMEROS_DOS
+    
+    ; Mostrar los primeros dos números
+    MOV AX, num1
+    CALL PRINT_NUM
+    MOV AH, 09H
+    LEA DX, space
+    INT 21H
+    
+    MOV AX, num2
+    CALL PRINT_NUM
+    MOV AH, 09H
+    LEA DX, space
+    INT 21H
+    
+    ; Calcular y mostrar los siguientes números
+    SUB CL, 2
+CALCULAR_FIB:
+    MOV AX, num1
+    ADD AX, num2
+    MOV result, AX
+    
+    ; Mostrar el número
+    CALL PRINT_NUM
+    MOV AH, 09H
+    LEA DX, space
+    INT 21H
+    
+    ; Actualizar variables para siguiente iteración
+    MOV AX, num2
+    MOV num1, AX
+    MOV AX, result
+    MOV num2, AX
+    
+    LOOP CALCULAR_FIB
+    JMP FIN
+inp:
+jmp INVALIDO  
+MOSTRAR_PRIMERO:
+    MOV AX, num1
+    CALL PRINT_NUM
+    JMP FIN
+    
+MOSTRAR_PRIMEROS_DOS:
+    MOV AX, num1
+    CALL PRINT_NUM
+    MOV AH, 09H
+    LEA DX, space
+    INT 21H
+    
+    MOV AX, num2
+    CALL PRINT_NUM
+    JMP FIN
+    
+INVALIDO:
+    MOV AH, 09H
+    LEA DX, error_msg
+    INT 21H
+    
+FIN:
+    MOV AH, 4CH
+    INT 21H
+MAIN ENDP
 
     .CODE
     print macro mensaje
@@ -22,257 +113,41 @@
         int 21h
     endm
 
-    start:
-        mov ax, @data
-        mov ds, ax
-
-    ciclo_principal:
-        print saltoLinea
-        print msgIteraciones
-        call leerIteraciones
-        print saltoLinea
-
-        call calcularFibonacci
-        
-        ; Mostrar serie original
-        print msgSerie
-        call mostrarPilaSinPerderAX
-        print saltoLinea
-        
-        ; Mostrar serie invertida
-        print msgSerieInv
-        call mostrarPilaInvertidaSinPerderAX
-        print saltoLinea
-        
-        ; Calcular y mostrar suma
-        call calcularSuma
-        print msgSuma
-        mov ax, suma  ; Asegurar que AX tenga el valor correcto
-        call imprimirNumero
-        print saltoLinea
-        ; Verificar si es primo
-        call esPrimo
-        print saltoLinea
-        
-        ; Opción para reiniciar o salir
-        print msgReiniciar
-        call esperarTecla
-        cmp al, 1Bh
-        jne ciclo_principal
-
-        mov ax, 4C00h
-        int 21h
-
-    leerIteraciones proc
-        ; Leer número de iteraciones y validarlo
-        mov ah, 01h
-        int 21h
-        sub al, '0'
-        cmp al, 1
-        jl error
-        cmp al, 11
-        jg error
-        mov iteraciones, al
-        ret
-    error:
-        print saltoLinea
-        print msgError
-        jmp leerIteraciones
-    leerIteraciones endp
-
-    calcularFibonacci proc
-        push cx
-        push si
-        push ax
-        
-        mov cx, 0
-        mov cl, iteraciones
-        mov si, 0
-        mov ax, 0
-        mov pila[si], ax
-        add si, 2
-        dec cx
-        jz fin_fibo
-        
-        mov ax, 1
-        mov pila[si], ax
-        add si, 2
-        dec cx
-        jz fin_fibo
-
-    siguiente:
-        mov ax, pila[si-4]
-        add ax, pila[si-2]
-        mov pila[si], ax
-        add si, 2
-        loop siguiente
-
-    fin_fibo:
-        pop ax
-        pop si
-        pop cx
-        ret
-    calcularFibonacci endp
-
-    mostrarPilaSinPerderAX proc
-        push ax
-        push cx
-        push si
-        push dx
-        
-        mov cx, 0
-        mov cl, iteraciones
-        mov si, 0
-    bucle_mostrar:
-        mov ax, pila[si]
-        call imprimirNumero
-        mov dl, ' '          ; Espacio entre números
-        mov ah, 02h
-        int 21h
-        add si, 2
-        loop bucle_mostrar
-        
-        pop dx
-        pop si
-        pop cx
-        pop ax
-        ret
-    mostrarPilaSinPerderAX endp
-
-    mostrarPilaInvertidaSinPerderAX proc
-        push ax
-        push cx
-        push si
-        push dx
-        
-        mov cx, 0
-        mov cl, iteraciones
-        mov si, cx
-        shl si, 1
-        sub si, 2
-    bucle_inv:
-        mov ax, pila[si]
-        call imprimirNumero
-        mov dl, ' '          ; Espacio entre números
-        mov ah, 02h
-        int 21h
-        sub si, 2
-        loop bucle_inv
-        
-        pop dx
-        pop si
-        pop cx
-        pop ax
-        ret
-    mostrarPilaInvertidaSinPerderAX endp
-
-    calcularSuma proc
-        push cx
-        push si
-        
-        mov cx, 0
-        mov cl, iteraciones
-        mov si, 0
-        mov ax, 0
-        
-    suma_loop:
-        add ax, pila[si]
-        add si, 2
-        loop suma_loop
-        
-        mov suma, ax
-        pop si
-        pop cx
-        ret
-    calcularSuma endp
-
-    esPrimo proc
-        push ax
-        push bx
-        push cx
-        push dx
-        
-        mov ax, suma
-        cmp ax, 1
-        jbe no_primo
-        
-        cmp ax, 2
-        je es_primo
-        
-        test ax, 1
-        jz no_primo
-        
-        mov bx, ax
-        mov cx, 3
-    prueba_divisor:
-        mov ax, bx
-        xor dx, dx
-        div cx
-        cmp dx, 0
-        je no_primo
-        
-        add cx, 2
-        mov ax, cx
-        mul cx
-        cmp ax, bx
-        jbe prueba_divisor
-        
-    es_primo:
-        print msgPrimo
-        jmp fin_primo
-    no_primo:
-        print msgNoPrimo
-    fin_primo:
-        pop dx
-        pop cx
-        pop bx
-        pop ax
-        ret
-    esPrimo endp
-
-    imprimirNumero proc
-        push ax
-        push bx
-        push cx
-        push dx
-        
-        mov bx, 10
-        xor cx, cx
-        
-        cmp ax, 0
-        jne convertir
-        mov dl, '0'
-        mov ah, 02h
-        int 21h
-        jmp fin_imprimir
-        
-    convertir:
-        xor dx, dx
-        div bx
-        push dx
-        inc cx
-        test ax, ax
-        jnz convertir
-        
-    imprimir:
-        pop dx
-        add dl, '0'
-        mov ah, 02h
-        int 21h
-        loop imprimir
-        
-    fin_imprimir:
-        pop dx
-        pop cx
-        pop bx
-        pop ax
-        ret
-    imprimirNumero endp
-
-    esperarTecla proc
-        mov ah, 00h
-        int 16h
-        ret
-    esperarTecla endp
-
-    END start
+; Subrutina para imprimir número en AX
+PRINT_NUM PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    
+    MOV CX, 0       ; Contador de dígitos
+    MOV BX, 10      ; Divisor
+    
+    ; Extraer dígitos y guardarlos en la pila
+EXTRAER_DIGITOS:
+    XOR DX, DX
+    DIV BX          ; DX:AX / BX
+    PUSH DX         ; Guardar residuo (dígito)
+    INC CX
+    
+    CMP AX, 0
+    JNE EXTRAER_DIGITOS
+    
+    ; Imprimir dígitos
+IMPRIMIR_DIGITOS:
+    POP DX
+    ADD DL, '0'     ; Convertir a ASCII
+    MOV AH, 02H
+    INT 21H
+    
+    LOOP IMPRIMIR_DIGITOS
+    
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+PRINT_NUM ENDP
+;comentario para enseñarle a mi novia Nadia <3
+;otra linea de comentario para que no sufra pq borre el anterior
+END MAIN
