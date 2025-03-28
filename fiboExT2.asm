@@ -2,15 +2,15 @@
     .STACK 100h
 
     .DATA
-        msgIteraciones db 'Ingrese el numero de iteraciones (max 11): $'
-        msgError db 'Error! Debe ser un numero entre 1 y 11.$'
+        msgIteraciones db 'Ingrese el numero de iteraciones (max 12): $'
+        msgError db 'Error! Debe ser un numero entre 1 y 12.$'
         msgSerie db 'Serie de Fibonacci: $'
         msgSerieInv db 'Serie Invertida: $'
         msgSuma db 'Suma de la serie: $'
         msgPrimo db 'La suma es un numero primo.$'
         msgNoPrimo db 'La suma NO es un numero primo.$'
         msgReiniciar db 'Presione ESC para salir o cualquier tecla para continuar.$'
-        saltoLinea db 0Dh,0Ah,'$'
+        saltoLinea db 10,13,'$'
         iteraciones db ?
         suma dw ?
         pila dw 12 dup(?)
@@ -63,22 +63,81 @@
         mov ax, 4C00h
         int 21h
 
-    leerIteraciones proc
-        ; Leer número de iteraciones y validarlo
-        mov ah, 01h
-        int 21h
-        sub al, '0'
-        cmp al, 1
-        jl error
-        cmp al, 11
-        jg error
-        mov iteraciones, al
-        ret
-    error:
-        print saltoLinea
-        print msgError
-        jmp leerIteraciones
-    leerIteraciones endp
+leerIteraciones proc
+    push bx
+    push ax
+    push dx
+
+    xor ax, ax           ; Limpiar AX
+    xor bx, bx           ; BX almacenará el número leído
+
+    ; Leer primer carácter
+    mov ah, 01h
+    int 21h
+    cmp al, 13           ; Si es ENTER sin ingresar nada, repetir
+    je leerIteraciones
+    cmp al, '1'          ; Si es menor que '1', es inválido
+    jl error
+    cmp al, '9'          ; Si es mayor que '9', verificar si es de dos cifras
+    jg verificarDosCifras
+
+    sub al, '0'          ; Convertir ASCII a número
+    mov bl, al           ; Guardar en BX temporalmente
+
+    ; Leer segundo carácter
+    mov ah, 01h
+    int 21h
+    cmp al, 13           ; Si es ENTER, solo hay un dígito (1-9)
+    je almacenar_numero
+    cmp al, '0'          ; Verificar si es '10' o '11'
+    je esDiez
+    cmp al, '1'
+    je esOnce
+    cmp al, '2'
+    je esDoce
+    jmp error            ; Si no es '0' o '1', es inválido
+
+verificarDosCifras:
+    cmp al, '1'          ; Si el primer dígito es '1', puede ser '10' u '11'
+    jne error            ; Si no es '1', error
+
+    sub al, '0'          ; Convertir '1' a número
+    mov bl, al           ; Guardar en BX
+
+    ; Leer segundo carácter
+    mov ah, 01h
+    int 21h
+    cmp al, '0'          ; Puede ser '10' o '11'
+    je esDiez
+    cmp al, '1'
+    je esOnce
+    cmp al, '2'
+    je esDoce
+    jmp error            ; Si no es '0' o '1', es inválido
+
+esDiez:
+    mov bl, 10           ; Guardar 10 en BL
+    jmp almacenar_numero
+
+esOnce:
+    mov bl, 11 
+    jmp almacenar_numero
+    
+esDoce:
+    mov bl,12; Guardar 11 en BL
+
+almacenar_numero:
+    mov iteraciones, bl  ; Guardar el número en `iteraciones`
+    pop dx
+    pop ax
+    pop bx
+    ret
+
+error:
+    print saltoLinea
+    print msgError
+    jmp leerIteraciones
+leerIteraciones endp
 
     calcularFibonacci proc
         push cx
