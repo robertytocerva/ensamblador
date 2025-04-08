@@ -98,7 +98,7 @@ leerIteraciones proc
     jmp error            
 
 verificarDosCifras:
-    cmp al, '1'          
+    cmp al, '1'           
     jne error           
 
     sub al, '0'          
