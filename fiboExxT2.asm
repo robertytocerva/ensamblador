@@ -74,8 +74,9 @@ leerIteraciones proc
     
     mov ah, 01h
     int 21h
-    cmp al, 13           
-    je leerIteraciones
+    
+    
+
     cmp al, '1'          
     jl error
     cmp al, '9'          
