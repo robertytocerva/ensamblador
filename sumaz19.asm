@@ -3,43 +3,40 @@
 .data
     msgBienvenida db 10,13, "Ingresa un numero del 1 al 9:  $"
     msgError db 10,13, "Error: El numero no es valido. Debe ser del 1 al 9.$"
-    msgResultado db 10,13, "El factorial es: $"
-    resultado dw ?  ; Variable para guardar el resultado (16 bits)
+    msgResultado db 10,13, "La suma es: $"
+    resultado db ?  
 .code
 main PROC 
     mov ax, @data
     mov ds, ax
 
-    
     mov ah, 09h
     lea dx, msgBienvenida
     int 21h
 
-    
     call leer_numero
 
-    ; Verificar si el número está en el rango válido (1-9)
+    
     cmp al, 1
     jb numero_invalido
     cmp al, 9
     ja numero_invalido
 
-    ; Calcular el factorial
+    
     mov bl, al
-    call factorial
+    call suma_descendente
 
-    ; Guardar el resultado (que está en AX)
     mov resultado, ax
 
-    ; Mostrar mensaje de resultado
+    
     mov ah, 09h
     lea dx, msgResultado
     int 21h
 
-    ; Mostrar el resultado (AX ya contiene el factorial)
+    
     call imprimir_numero
 
-    ; Terminar el programa
+    
     mov ax, 4C00H
     int 21h
 
@@ -58,15 +55,15 @@ leer_numero PROC
     ret
 leer_numero ENDP
 
-factorial PROC
-    mov cl, bl
-    mov ax, 1  ; Usamos AX en lugar de AL para resultados de 16 bits
-factorial_loop: 
-    mul cl     ; AX = AX * CL
-    dec cl
-    jnz factorial_loop
+suma_descendente PROC
+    xor ax, ax     
+    mov cl, bl     
+suma_loop:
+    add ax, cx     
+    dec cx
+    jnz suma_loop
     ret
-factorial ENDP
+suma_descendente ENDP
 
 imprimir_numero PROC
   push ax ; Guardar AX en la pila
